@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Mr. Collin — Wildchicken College — Mail</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<style>
+  :root{
+    --brand:#2165d1;
+    --bg:#f5f7fb;
+    --card:#ffffff;
+    --muted:#6b7480;
+  }
+  html,body{height:100%;margin:0;font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,Arial;color:#111;background:var(--bg);}
+  header{background:linear-gradient(180deg,var(--brand),#1858b8);color:#fff;padding:12px 16px;display:flex;align-items:center;gap:12px;box-shadow:0 1px 0 rgba(0,0,0,0.06);}
+  .account{display:flex;flex-direction:column;}
+  .account .name{font-weight:700}
+  .account .email{font-size:13px;opacity:0.95}
+  .app{display:flex;height:calc(100vh - 56px)}
+  .sidebar{width:220px;background:var(--card);border-right:1px solid #e6e9ee;padding:14px;box-sizing:border-box}
+  .profile{display:flex;gap:10px;align-items:center;margin-bottom:12px}
+  .avatar{width:44px;height:44;border-radius:6px;background:#ffd166;display:flex;align-items:center;justify-content:center;font-weight:700;color:#fff}
+  .folders{margin-top:8px}
+  .folder{padding:9px 10px;border-radius:6px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+  .folder:hover{background:#f0f6ff}
+  .folder.active{background:#e9f0ff;font-weight:700}
+  .inbox{width:420px;border-right:1px solid #e6e9ee;background:var(--card);overflow-y:auto}
+  .mail{padding:12px 14px;border-bottom:1px solid #f1f3f5;cursor:pointer;display:flex;flex-direction:column}
+  .mail.unread .subject{font-weight:700}
+  .mail .meta{font-size:12px;color:var(--muted);margin-top:6px;display:flex;justify-content:space-between}
+  .content{flex:1;padding:18px;overflow-y:auto;background:var(--card)}
+  .subject{font-size:17px}
+  pre{white-space:pre-wrap;font-family:inherit;line-height:1.45;font-size:14px}
+  .hint{margin-top:16px;font-size:12px;color:#9aa0a6}
+  .controls{display:flex;gap:8px;margin-left:auto}
+  .btn{background:transparent;border:1px solid rgba(255,255,255,0.12);padding:6px 10px;border-radius:6px;color:#fff;cursor:pointer}
+  .search{margin-top:8px;display:flex;gap:8px}
+  .search input{flex:1;padding:8px;border-radius:6px;border:1px solid #e6e9ee;background:#fff}
+  .compose-form{border:1px dashed #e3e6ea;padding:12px;border-radius:6px;margin-bottom:12px;background:#fcfdff}
+  .compose-form input,.compose-form textarea{width:100%;box-sizing:border-box;margin-top:6px;padding:8px;border:1px solid #e6e9ee;border-radius:6px}
+  .compose-actions{display:flex;gap:8px;margin-top:8px}
+  .small-muted{font-size:13px;color:var(--muted)}
+  .disabled-note{margin-top:10px;color:#b33; font-weight:600}
+  @media (max-width:900px){.inbox{display:none}.sidebar{display:none}}
+</style>
+</head>
+<body>
+<header>
+  <div class="account">
+    <div class="name">Mr. Collin</div>
+    <div class="email">collin@wildchicken-college.com</div>
+  </div>
+  <div class="controls" style="margin-left:auto">
+    <button id="composeBtn" class="btn" title="Compose (preview only)">Compose</button>
+  </div>
+</header>
+
+<div class="app">
+  <div class="sidebar">
+    <div class="profile">
+      <div class="avatar">MC</div>
+      <div>
+        <div style="font-weight:700">Mr. Collin</div>
+        <div class="small-muted">collin@wildchicken-college.com</div>
+      </div>
+    </div>
+
+    <div class="search">
+      <input id="search" placeholder="Search mail..." />
+    </div>
+
+    <div class="folders" id="folders">
+      <div class="folder active" data-folder="inbox">Inbox <span id="unread-count" style="color:var(--muted);margin-left:8px"></span></div>
+      <div class="folder" data-folder="sent">Sent</div>
+      <div class="folder" data-folder="drafts">Drafts</div>
+      <div class="folder" data-folder="spam">Spam</div>
+    </div>
+  </div>
+
+  <div class="inbox" id="list"></div>
+
+  <div class="content" id="content">
+    <p>Select a folder or an email to view it here.</p>
+  </div>
+</div>
+
+<script>
+/*
+  Read-only demo: all actions that would send/save/move emails are disabled.
+  Buttons and forms remain visible as placeholders so you can fill them in manually,
+  but they will not change stored messages.
+*/
+
+const state = {
+  activeFolder: 'inbox',
+  emails: {
+    inbox: [
+      { id: 1, from: "Admissions <admissions@wildchicken-college.com>", to: "collin@wildchicken-college.com", subject: "Welcome packet and schedule", date: "2025-02-01 09:12", body: "Dear Mr. Collin,\n\nPlease review the attached welcome packet for the spring semester.\n\n— Admissions", unread: true },
+      { id: 2, from: "Parent <parent@example.com>", to: "collin@wildchicken-college.com", subject: "Question about homework", date: "2025-02-02 14:30", body: "Hi Mr. Collin,\n\nCould you clarify the homework due next Monday?\n\nThanks.", unread: true },
+      { id: 3, from: "Staff <staff@wildchicken-college.com>", to: "collin@wildchicken-college.com", subject: "Staff meeting notes", date: "2025-01-30 11:05", body: "Meeting notes attached. Action items listed.", unread: false }
+    ],
+    sent: [
+      { id: 101, from: "collin@wildchicken-college.com", to: "parent@example.com", subject: "Re: Question about homework", date: "2025-02-02 15:00", body: "Thank you for your message. The homework is due on Monday by 5pm. Please see the syllabus for details.", unread: false }
+    ],
+    drafts: [
+      { id: 201, from: "collin@wildchicken-college.com", to: "", subject: "Draft: Field trip permission", date: "2025-02-03 08:00", body: "Leave space here to complete the permission slip email.", unread: false }
+    ],
+    spam: [
+      { id: 301, from: "noreply@strange.com", to: "collin@wildchicken-college.com", subject: "You won a prize!", date: "2025-01-28 05:10", body: "This is an unsolicited message. Mark as spam.", unread: false }
+    ]
+  }
+};
+
+const listEl = document.getElementById('list');
+const contentEl = document.getElementById('content');
+const foldersEl = document.getElementById('folders');
+const unreadCountEl = document.getElementById('unread-count');
+const searchInput = document.getElementById('search');
+const composeBtn = document.getElementById('composeBtn');
+
+function renderFolderList() {
+  const unread = state.emails.inbox.filter(e => e.unread).length;
+  unreadCountEl.textContent = unread ? `(${unread} unread)` : '';
+  const folderEls = foldersEl.querySelectorAll('.folder');
+  folderEls.forEach(el => {
+    el.classList.toggle('active', el.dataset.folder === state.activeFolder);
+  });
+}
+
+function renderList(filter='') {
+  listEl.innerHTML = '';
+  const arr = (state.em](#)*
